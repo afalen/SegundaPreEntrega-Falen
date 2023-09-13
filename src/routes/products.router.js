@@ -3,7 +3,9 @@ const {productModel} = require('../models/products.model')
 
 const router = Router()
 
-router.get('/products', async(req, res)=>{
+
+// Ruta para mostrar productos de acuerdo a las querys ingresadas
+router.get('/api/products', async(req, res)=>{
     try{
         const limit = parseInt(req.query.limit) || 10
         const page = parseInt(req.query.page) || 1
@@ -16,11 +18,13 @@ router.get('/products', async(req, res)=>{
             products = await productModel.paginate({}, {limit: limit, page: page })
         }else if(!query){
             products = await productModel.paginate({}, {limit: limit, page: page, sort: {precio: sort} })
-        }else{
+        }else if(isNaN(query)){
             products = await productModel.paginate({categoria: query}, {limit: limit, page: page, sort: {precio: sort} })
+        }else if(!isNaN(query)){
+            products = await productModel.paginate({stock: Number(query)}, {limit: limit, page: page, sort: {precio: sort} })
         }
 
-        console.log(products) 
+        //console.log(products) 
         
         res.send({result: 'success', payload: products})
     }catch(error){
@@ -29,26 +33,20 @@ router.get('/products', async(req, res)=>{
 })
 
 
-
-
-
-
-
-
-
-
-// MOSTRAR LOS PRODUCTOS
-/* router.get('/products', async(req,res)=>{
+// Ruta para mostrar un producto especificado por su ID
+router.get('/api/products/:pid', async(req, res) => {
+    const pid = req.params.pid
     try{
-        let products = await productModel.find()
-        res.send({result: 'success', payload: products})
+        let product = await productModel.findById(pid)
+        res.send({result: 'success', payload: product})
     }catch(error){
         console.error(error)
     }
-}) */
+});
 
-// AGREGAR UN PRODUCTO
-router.post('/products', async(req,res)=>{
+
+// Ruta para agregar un nuevo producto
+router.post('/api/products', async(req,res)=>{
     let {nombre, categoria, precio, stock, imagen} = req.body
     if(!nombre || !categoria || !precio || !stock || !imagen){
         res.send({status: "error", error: "Faltan parámetros"})
@@ -58,8 +56,9 @@ router.post('/products', async(req,res)=>{
     res.send({result: "success", payload: result})
 })
 
-// MODIFICAR UN PRODUCTO
-router.put('/products/:uid', async(req,res)=>{
+
+// Ruta para modificar/actualizar un producto por su ID
+router.put('/api/products/:uid', async(req,res)=>{
     let {uid} = req.params
 
     let productToReplace = req.body
@@ -73,8 +72,8 @@ router.put('/products/:uid', async(req,res)=>{
 
 })
 
-// ELIMINAR UN PRODUCTO
-router.delete('/products/:uid', async(req,res)=>{
+// Ruta para eliminar un producto por su ID
+router.delete('/api/products/:uid', async(req,res)=>{
     let {uid} = req.params
     let result = await productModel.deleteOne({_id: uid})
     res.send({result: "success", payload: result})
